@@ -15,37 +15,36 @@
     /* global document, ENV, Monitoring */
 
     import framework, {domUpdate, html} from 'https://www.unpkg.com/@erickmerchant/framework/main.mjs'
-    import onappend from 'https://www.unpkg.com/@erickmerchant/onappend/main.mjs'
 
     const target = document.querySelector('main')
-
-    onappend(target)
 
     const update = domUpdate(target)
 
     const {main, div, span, table, tbody, td, tr} = html
 
+    const loadSamples = (commit) => {
+      commit(() => {
+        const state = ENV.generateData().toArray()
+
+        Monitoring.renderRate.ping()
+
+        setTimeout(() => loadSamples(commit), ENV.timeout)
+
+        return state
+      })
+    }
+
     framework({
       state: [],
       update,
       component(state, commit) {
+        if (!state.length) {
+          loadSamples(commit)
+        }
+
         return main(
           {
-            onappend() {
-              const loadSamples = () => {
-                commit(() => {
-                  const state = ENV.generateData().toArray()
 
-                  Monitoring.renderRate.ping()
-
-                  setTimeout(loadSamples, ENV.timeout)
-
-                  return state
-                })
-              }
-
-              loadSamples()
-            }
           },
           table(
             {class: 'table table-striped latest-data'},
