@@ -20,8 +20,6 @@
 
     const update = domUpdate(target)
 
-    const {main, div, span, table, tbody, td, tr} = html
-
     const loadSamples = (commit) => {
       commit(() => {
         const state = ENV.generateData().toArray()
@@ -34,6 +32,8 @@
       })
     }
 
+    const {main, row, queries} = html
+
     framework({
       state: [],
       update,
@@ -42,40 +42,31 @@
           loadSamples(commit)
         }
 
-        return main(
-          {
-
-          },
-          table(
-            {class: 'table table-striped latest-data'},
-            tbody(
-              {},
-              ...state.map((db) => tr(
-                {},
-                td({class: 'dbname'}, db.dbname),
-                td(
-                  {class: 'query-count'},
-                  span(
-                    {class: db.lastSample.countClassName},
-                    db.lastSample.nbQueries
-                  )
-                ),
-                ...db.lastSample.topFiveQueries.map((query) => td(
-                  {class: query.elapsedClassName},
-                  query.formatElapsed,
-                  div(
-                    {class: 'popover left'},
-                    div(
-                      {class: 'popover-content'},
-                      query.query
-                    ),
-                    div({class: 'arrow'})
-                  )
-                ))
-              ))
-            )
-          )
-        )
+        return main`<main>
+          <table class="table table-striped latest-data">
+            <tbody>
+              ${state.map((db) => row`<tr>
+                <td class="dbname">${db.dbname}</td>
+                <td class="query-count">
+                  <span class=${db.lastSample.countClassName}>
+                    ${db.lastSample.nbQueries}
+                  </span>
+                </td>
+                ${db.lastSample.topFiveQueries.map((query) => queries`<td
+                  class=${query.elapsedClassName}
+                >
+                  ${query.formatElapsed}
+                  <div class="popover left">
+                    <div class="popover-content">
+                      ${query.query}
+                    </div>
+                    <div class="arrow" />
+                  </div>
+                </td>`)}
+              </tr>`)}
+            </tbody>
+          </table>
+        </main>`
       }
     })
   </script>
