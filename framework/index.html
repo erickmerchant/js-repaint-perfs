@@ -52,7 +52,7 @@
                     ${db.lastSample.nbQueries}
                   </span>
                 </td>
-                ${db.lastSample.topFiveQueries.map((q) => query`<td
+                ${() => db.lastSample.topFiveQueries.map((q) => query`<td
                   class=${q.elapsedClassName}
                 >
                   ${q.formatElapsed}
