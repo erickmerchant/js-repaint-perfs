@@ -45,15 +45,16 @@
         return main`<main>
           <table class="table table-striped latest-data">
             <tbody>
-              ${state.map((db) => row`<tr id=${'mutation-' + db.lastMutationId}>
+              ${state.map((db, dbI) => row`<tr id=${`mutation-${db.lastMutationId}`}>
                 <td class="dbname">${db.dbname}</td>
                 <td class="query-count">
                   <span class=${db.lastSample.countClassName}>
                     ${db.lastSample.nbQueries}
                   </span>
                 </td>
-                ${() => db.lastSample.topFiveQueries.map((q) => query`<td
+                ${() => db.lastSample.topFiveQueries.map((q, qI) => query`<td
                   class=${q.elapsedClassName}
+                  id=${q.query === '***' ? `blank-${dbI}-${qI}` : null}
                 >
                   ${q.formatElapsed}
                   <div class="popover left">
