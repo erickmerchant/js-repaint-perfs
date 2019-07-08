@@ -32,7 +32,11 @@
       })
     }
 
-    const {main, row, query} = view
+    const {main, row, query} = view()
+
+    const getQueryId = (prefix, query) => {
+      return `Q${prefix}${query.replace(/[^a-z0-9]/gi, '-')}`
+    }
 
     framework({
       state: [],
@@ -45,16 +49,16 @@
         return main`<main>
           <table class="table table-striped latest-data">
             <tbody>
-              ${state.map((db, dbI) => row`<tr id=${`mutation-${db.lastMutationId}`}>
+              ${state.map((db, index) => row`<tr id=${`M${db.lastMutationId}`}>
                 <td class="dbname">${db.dbname}</td>
                 <td class="query-count">
                   <span class=${db.lastSample.countClassName}>
                     ${db.lastSample.nbQueries}
                   </span>
                 </td>
-                ${() => db.lastSample.topFiveQueries.map((q, qI) => query`<td
+                ${() => db.lastSample.topFiveQueries.map((q) => query`<td
                   class=${q.elapsedClassName}
-                  id=${q.query === '***' ? `blank-${dbI}-${qI}` : null}
+                  id=${getQueryId(index, q.query)}
                 >
                   ${q.formatElapsed}
                   <div class="popover left">
