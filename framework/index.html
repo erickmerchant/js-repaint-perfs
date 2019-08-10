@@ -41,7 +41,7 @@
     framework({
       state: [],
       update,
-      component(state, commit) {
+      component({state, commit}) {
         if (!state.length) {
           loadSamples(commit)
         }
