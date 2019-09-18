@@ -14,7 +14,7 @@
   <script type="module" crossorigin="anonymous">
     /* global document, ENV, Monitoring */
 
-    import framework, {domUpdate, view} from 'https://www.unpkg.com/@erickmerchant/framework/main.mjs'
+    import framework, {domUpdate, view, unchanged} from 'https://www.unpkg.com/@erickmerchant/framework/main.mjs'
 
     const target = document.querySelector('main')
 
@@ -22,27 +22,22 @@
 
     const {main, row, query} = view
 
-    const getQueryId = (prefix, query) => {
-      return `Q${prefix}${query.replace(/[^a-z0-9]/gi, '-')}`
-    }
-
     const commit = framework({
-      state: [],
+      state: {current: []},
       update,
       component({state, commit}) {
         return main`<main>
           <table class="table table-striped latest-data">
             <tbody>
-              ${state.map((db, index) => row`<tr id=${`M${db.lastMutationId}`}>
+              ${state.current.map((db, i) => state.previous && state.previous[i] && db.lastMutationId === state.previous[i].lastMutationId ? unchanged : row`<tr>
                 <td class="dbname">${db.dbname}</td>
                 <td class="query-count">
                   <span class=${db.lastSample.countClassName}>
                     ${db.lastSample.nbQueries}
                   </span>
                 </td>
-                ${() => db.lastSample.topFiveQueries.map((q) => query`<td
+                ${db.lastSample.topFiveQueries.map((q, j) => state.previous && state.previous[i] && (q.query === state.previous[i].lastSample.topFiveQueries[j].query && q.elapsed === state.previous[i].lastSample.topFiveQueries[j].elapsed) ? unchanged : query`<td
                   class=${q.elapsedClassName}
-                  id=${getQueryId(index, q.query)}
                 >
                   ${q.formatElapsed}
                   <div class="popover left">
@@ -60,10 +55,14 @@
     })
 
     const loadSamples = () => {
-      commit(() => {
+      commit((state) => {
         Monitoring.renderRate.ping()
 
-        const state = ENV.generateData().toArray()
+        const next = ENV.generateData().toArray()
+
+        state.previous = state.current
+
+        state.current = next
 
         setTimeout(loadSamples, ENV.timeout)
 
