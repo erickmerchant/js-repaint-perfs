@@ -20,7 +20,7 @@
 
     const update = domUpdate(target)
 
-    const {main, row, query} = view
+    const {main, row, query} = view()
 
     const commit = framework({
       state: {current: []},
