@@ -29,25 +29,45 @@
         return main`<main>
           <table class="table table-striped latest-data">
             <tbody>
-              ${state.current.map((db, i) => state.previous && state.previous[i] && db.lastMutationId === state.previous[i].lastMutationId ? unchanged : row`<tr>
-                <td class="dbname">${db.dbname}</td>
-                <td class="query-count">
-                  <span class=${db.lastSample.countClassName}>
-                    ${db.lastSample.nbQueries}
-                  </span>
-                </td>
-                ${db.lastSample.topFiveQueries.map((q, j) => state.previous && state.previous[i] && (q.query === state.previous[i].lastSample.topFiveQueries[j].query && q.elapsed === state.previous[i].lastSample.topFiveQueries[j].elapsed) ? unchanged : query`<td
-                  class=${q.elapsedClassName}
-                >
-                  ${q.formatElapsed}
-                  <div class="popover left">
-                    <div class="popover-content">
-                      ${q.query}
-                    </div>
-                    <div class="arrow" />
-                  </div>
-                </td>`)}
-              </tr>`)}
+              ${state.current.map((db, i) => {
+                if (state.previous && state.previous[i] && db.lastMutationId === state.previous[i].lastMutationId) {
+                  return {
+                    view: 'row',
+                    dynamic: false
+                  }
+                }
+
+                return row`<tr>
+                  <td class="dbname">${db.dbname}</td>
+                  <td class="query-count">
+                    <span class=${db.lastSample.countClassName}>
+                      ${db.lastSample.nbQueries}
+                    </span>
+                  </td>
+                  ${db.lastSample.topFiveQueries.map((q, j) => {
+                    if (state.previous && state.previous[i]) {
+                      const prev = state.previous[i].lastSample.topFiveQueries[j]
+
+                      if (q.query === prev.query && q.elapsed === prev.elapsed) {
+                        return {
+                          view: 'query',
+                          dynamic: false
+                        }
+                      }
+                    }
+
+                    return query`<td class=${q.elapsedClassName}>
+                      ${q.formatElapsed}
+                      <div class="popover left">
+                        <div class="popover-content">
+                          ${q.query}
+                        </div>
+                        <div class="arrow" />
+                      </div>
+                    </td>`
+                  })}
+                </tr>`
+              })}
             </tbody>
           </table>
         </main>`
@@ -58,15 +78,11 @@
       commit((state) => {
         Monitoring.renderRate.ping()
 
-        const next = ENV.generateData().toArray()
-
-        state.previous = state.current
-
-        state.current = next
+        const current = ENV.generateData().toArray()
 
         setTimeout(loadSamples, ENV.timeout)
 
-        return state
+        return {current, previous: state.current}
       })
     }
 
