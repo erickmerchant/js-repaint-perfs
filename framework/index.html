@@ -14,7 +14,7 @@
   <script type="module" crossorigin="anonymous">
     /* global document, ENV, Monitoring */
 
-    import framework, {domUpdate, view} from 'https://www.unpkg.com/@erickmerchant/framework/main.mjs'
+    import {render, domUpdate, view} from 'https://www.unpkg.com/@erickmerchant/framework/main.mjs'
 
     const target = document.querySelector('main')
 
@@ -22,7 +22,7 @@
 
     const {main, row, query} = view()
 
-    const commit = framework({
+    const commit = render({
       state: {current: []},
       update,
       component({state, commit}) {
