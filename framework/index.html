@@ -14,67 +14,69 @@
   <script type="module" crossorigin="anonymous">
     /* global document, ENV, Monitoring */
 
-    import {render, domUpdate, html, skipUpdate} from 'https://www.unpkg.com/@erickmerchant/framework/main.mjs'
+    import {createApp, createDomView, html, skipUpdate} from 'https://www.unpkg.com/@erickmerchant/framework/main.mjs'
+
+    const state = {current: []}
+
+    const app = createApp(state)
 
     const target = document.querySelector('main')
 
-    const update = domUpdate(target)
+    const view = createDomView(target, (state) => {
+      return html`<main>
+        <table class="table table-striped latest-data">
+          <tbody>
+            ${state.current.map((db, i) => {
+              if (state.previous && state.previous[i] && db.lastMutationId === state.previous[i].lastMutationId) {
+                return skipUpdate()
+              }
 
-    const commit = render({
-      state: {current: []},
-      update,
-      component({state, commit}) {
-        return html`<main>
-          <table class="table table-striped latest-data">
-            <tbody>
-              ${state.current.map((db, i) => {
-                if (state.previous && state.previous[i] && db.lastMutationId === state.previous[i].lastMutationId) {
-                  return skipUpdate()
-                }
+              return html`<tr>
+                <td class="dbname">${db.dbname}</td>
+                <td class="query-count">
+                  <span class=${db.lastSample.countClassName}>
+                    ${db.lastSample.nbQueries}
+                  </span>
+                </td>
+                ${db.lastSample.topFiveQueries.map((q, j) => {
+                  if (state.previous && state.previous[i]) {
+                    const prev = state.previous[i].lastSample.topFiveQueries[j]
 
-                return html`<tr>
-                  <td class="dbname">${db.dbname}</td>
-                  <td class="query-count">
-                    <span class=${db.lastSample.countClassName}>
-                      ${db.lastSample.nbQueries}
-                    </span>
-                  </td>
-                  ${db.lastSample.topFiveQueries.map((q, j) => {
-                    if (state.previous && state.previous[i]) {
-                      const prev = state.previous[i].lastSample.topFiveQueries[j]
-
-                      if (q.query === prev.query && q.elapsed === prev.elapsed) {
-                        return skipUpdate()
-                      }
+                    if (q.query === prev.query && q.elapsed === prev.elapsed) {
+                      return skipUpdate()
                     }
+                  }
 
-                    return html`<td class=${q.elapsedClassName}>
-                      ${q.formatElapsed}
-                      <div class="popover left">
-                        <div class="popover-content">
-                          ${q.query}
-                        </div>
-                        <div class="arrow" />
+                  return html`<td class=${q.elapsedClassName}>
+                    ${q.formatElapsed}
+                    <div class="popover left">
+                      <div class="popover-content">
+                        ${q.query}
                       </div>
-                    </td>`
-                  })}
-                </tr>`
-              })}
-            </tbody>
-          </table>
-        </main>`
-      }
+                      <div class="arrow" />
+                    </div>
+                  </td>`
+                })}
+              </tr>`
+            })}
+          </tbody>
+        </table>
+      </main>`
     })
 
+    app.render(view)
+
     const loadSamples = () => {
-      commit((state) => {
-        Monitoring.renderRate.ping()
+      Monitoring.renderRate.ping()
 
-        const current = ENV.generateData().toArray()
+      const current = ENV.generateData().toArray()
 
-        setTimeout(loadSamples, ENV.timeout)
+      setTimeout(loadSamples, ENV.timeout)
 
-        return {current, previous: state.current}
+      app.commit((state) => {
+        state.previous = state.current ?? []
+
+        state.current = current
       })
     }
 
