@@ -1,88 +1,102 @@
 <!DOCTYPE html>
 <html>
-<head>
-  <link href="../styles.css" rel="stylesheet" type="text/css" />
-  <meta charset="utf-8">
-  <title>dbmon (@erickmerchant/framework)</title>
-</head>
-<body>
-  <main></main>
-  <script src="../ENV.js"></script>
-  <script src="../lib/memory-stats.js"></script>
-  <script src="../lib/monitor.js"></script>
+  <head>
+    <link href="../styles.css" rel="stylesheet" type="text/css" />
+    <meta charset="utf-8" />
+    <title>dbmon (@erickmerchant/framework)</title>
+  </head>
+  <body>
+    <main></main>
+    <script src="../ENV.js"></script>
+    <script src="../lib/memory-stats.js"></script>
+    <script src="../lib/monitor.js"></script>
 
-  <script type="module" crossorigin="anonymous">
-    /* global document, ENV, Monitoring */
+    <script type="module" crossorigin="anonymous">
+      /* global document, ENV, Monitoring */
 
-    import {createApp, createDomView, html, skipUpdate} from 'https://www.unpkg.com/@erickmerchant/framework/main.mjs'
+      import {createApp, createDomView, html, skipUpdate} from 'https://www.unpkg.com/@erickmerchant/framework/main.js'
 
-    const state = {current: []}
+      const state = {current: []}
 
-    const app = createApp(state)
+      const app = createApp(state)
 
-    const target = document.querySelector('main')
+      const target = document.querySelector('main')
 
-    const view = createDomView(target, (state) => {
-      return html`<main>
-        <table class="table table-striped latest-data">
-          <tbody>
-            ${state.current.map((db, i) => {
-              if (state.previous && state.previous[i] && db.lastMutationId === state.previous[i].lastMutationId) {
-                return skipUpdate()
-              }
-
-              return html`<tr>
-                <td class="dbname">${db.dbname}</td>
-                <td class="query-count">
-                  <span class=${db.lastSample.countClassName}>
-                    ${db.lastSample.nbQueries}
-                  </span>
-                </td>
-                ${db.lastSample.topFiveQueries.map((q, j) => {
-                  if (state.previous && state.previous[i]) {
-                    const prev = state.previous[i].lastSample.topFiveQueries[j]
-
-                    if (q.query === prev.query && q.elapsed === prev.elapsed) {
-                      return skipUpdate()
-                    }
+      const view = createDomView(target, (state) => {
+        return html`
+          <main>
+            <table class="table table-striped latest-data">
+              <tbody>
+                ${state.current.map((db, i) => {
+                  if (
+                    state.previous &&
+                    state.previous[i] &&
+                    db.lastMutationId === state.previous[i].lastMutationId
+                  ) {
+                    return skipUpdate()
                   }
 
-                  return html`<td class=${q.elapsedClassName}>
-                    ${q.formatElapsed}
-                    <div class="popover left">
-                      <div class="popover-content">
-                        ${q.query}
-                      </div>
-                      <div class="arrow" />
-                    </div>
-                  </td>`
+                  return html`
+                    <tr>
+                      <td class="dbname">${db.dbname}</td>
+                      <td class="query-count">
+                        <span class=${db.lastSample.countClassName}>
+                          ${db.lastSample.nbQueries}
+                        </span>
+                      </td>
+                      ${db.lastSample.topFiveQueries.map((q, j) => {
+                        if (state.previous && state.previous[i]) {
+                          const prev =
+                            state.previous[i].lastSample.topFiveQueries[j]
+
+                          if (
+                            q.query === prev.query &&
+                            q.elapsed === prev.elapsed
+                          ) {
+                            return skipUpdate()
+                          }
+                        }
+
+                        return html`
+                          <td class=${q.elapsedClassName}>
+                            ${q.formatElapsed}
+                            <div class="popover left">
+                              <div class="popover-content">
+                                ${q.query}
+                              </div>
+                              <div class="arrow" />
+                            </div>
+                          </td>
+                        `
+                      })}
+                    </tr>
+                  `
                 })}
-              </tr>`
-            })}
-          </tbody>
-        </table>
-      </main>`
-    })
-
-    app.render(view)
-
-    const loadSamples = () => {
-      Monitoring.renderRate.ping()
-
-      const current = ENV.generateData().toArray()
-
-      setTimeout(loadSamples, ENV.timeout)
-
-      app.commit((state) => {
-        state.previous = state.current ?? []
-
-        state.current = current
+              </tbody>
+            </table>
+          </main>
+        `
       })
-    }
 
-    loadSamples()
-  </script>
+      app.render(view)
 
-  <script src="../ga.js"></script>
-</body>
+      const loadSamples = () => {
+        Monitoring.renderRate.ping()
+
+        const current = ENV.generateData().toArray()
+
+        setTimeout(loadSamples, ENV.timeout)
+
+        app.commit((state) => {
+          state.previous = state.current ?? []
+
+          state.current = current
+        })
+      }
+
+      loadSamples()
+    </script>
+
+    <script src="../ga.js"></script>
+  </body>
 </html>
